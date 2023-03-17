@@ -1,0 +1,20 @@
+{
+  "filename": "assets/Skata.png",
+  "width": 128,
+  "height": 128,
+  "animations": {
+    "riding": {
+      "looping": true,
+      "frames": [
+        {
+          "x": 1,
+          "y": 1,
+          "w": 128,
+          "h": 128,
+          "t": 16
+        }
+      ]
+    }
+  },
+  "start": "riding"
+}
