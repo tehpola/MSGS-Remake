@@ -3,6 +3,7 @@ import sys
 from spritesheet import SpriteSheet
 
 
+is_dev_mode = True
 nothing = pygame.Color(0, 0, 0, 0)
 red = pygame.Color(255, 0, 0)
 green = pygame.Color(0, 255, 0)
@@ -42,6 +43,11 @@ def blend(t, t0, t1):
 
 
 def intro_tick(state):
+    if is_dev_mode:
+        state.is_intro_completed = True
+        state.world.add(state.bob)
+        return
+
     time = pygame.time.get_ticks()
     (nfis, nfie), (nfos, nfoe) = state.config.intro_name_times
     (pfis, pfie), (pfos, pfoe) = state.config.intro_pres_times
@@ -90,6 +96,8 @@ def intro_tick(state):
 
 
 def game_tick(state, dt):
+    sys.stdout.write('%.1f\r' % dt)
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return False

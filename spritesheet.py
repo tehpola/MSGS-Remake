@@ -37,12 +37,11 @@ class SpriteSheet(pygame.sprite.Sprite):
         self.frame_time += dt
         anim = self.info['animations'][self.animation]
         if self.frame_time > anim['frames'][self.frame]['t']:
+            self.frame_time = 0
             self.frame += 1
             if self.frame >= len(anim['frames']):
-                if anim.get('looping', False):
-                    self.frame = 0
-                else:
+                self.frame = 0
+                if not anim.get('looping', False):
                     self.animation = anim.get('next', self.info['start'])
-                    anim = self.info['animations'][self.animation]
 
             self._blit()
