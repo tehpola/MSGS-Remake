@@ -34,11 +34,30 @@ class State(object):
         self.clock = clock
         self.screen = screen
         self.is_intro_completed = False
-        self.intro_time = 0
         self.font = pygame.font.Font('freesansbold.ttf', 64)
-        self.bob = Skater('assets/Skata.json')
+        self.bob = Skater('assets/Skata.json', self)
         self.env = Environment('assets/Cow.json', size)
         self.world = pygame.sprite.Group()
+        self.combo_string = ''
+        self.combo_surface = None
+        self.combo_rect = None
+
+    def update_combo(self, trick):
+        # Cannot reuse font surfaces - must destroy and recreate
+        if self.combo_surface:
+            self.world.remove(self.combo_surface)
+
+        if self.combo_string:
+            self.combo_string += ' + ' + trick
+        else:
+            self.combo_string = trick
+
+        self.combo_surface = self.font.render(self.combo_string, True, green)
+        self.combo_rect = self.combo_surface.get_rect()
+        self.combo_rect.center = (width / 2, self.combo_rect.height)
+
+    def end_combo(self):
+        self.combo_string = ''
 
 
 def blend(t, t0, t1):
@@ -117,6 +136,9 @@ def game_tick(state, dt):
     else:
         state.world.update(dt, state)
         state.world.draw(state.screen)
+
+        if state.combo_surface:
+            state.screen.blit(state.combo_surface, state.combo_rect)
 
     pygame.display.flip()
 

@@ -3,13 +3,14 @@ from spritesheet import SpriteSheet
 
 
 class Skater(SpriteSheet):
-    def __init__(self, info):
-        SpriteSheet.__init__(self, info)
+    def __init__(self, info, state):
+        super().__init__(info)
+        self.state = state
         self.velocity = (0, 0)
         self.gravity = 0.025
         self.is_grounded = False
 
-    def update(self, dt, state, *args, **kwargs):
+    def update(self, dt, *args, **kwargs):
         # Apply gravity
         vx, vy = self.velocity
         vy += self.gravity * dt
@@ -19,7 +20,7 @@ class Skater(SpriteSheet):
         self.rect.move_ip(*self.velocity)
 
         # Detect the character moving off the screen
-        ew, eh = state.env.rect.size
+        ew, eh = self.state.env.rect.size
         if self.rect.x > ew or self.rect.y > eh or self.rect.x < -self.rect.width:
             self.rect.topleft = (0, 0)
             self.velocity = min(vx, 10), 0
@@ -27,17 +28,17 @@ class Skater(SpriteSheet):
             # TODO: Move to the next scene
 
         # Environmental collision detection
-        collision = pygame.sprite.collide_mask(state.env, self)
+        collision = pygame.sprite.collide_mask(self.state.env, self)
         if collision:
             # TODO: I should do something better to resolve penetration...
-            if state.env.is_dangerous(collision):
+            if self.state.env.is_dangerous(collision):
                 self.animate('falling')
-            elif state.env.is_grindable(collision):
+            elif self.state.env.is_grindable(collision):
                 # TODO: Just flag this?
                 pass
                 #self.land()
                 #self.animate('manual')
-            elif state.env.is_rideable(collision):
+            elif self.state.env.is_rideable(collision):
                 self.land()
                 self.animate('riding')
             else:
@@ -63,3 +64,11 @@ class Skater(SpriteSheet):
                 self.velocity = vx, -15
                 self.is_grounded = False
                 self.animate('ollie')
+
+    def animate(self, animation):
+        super().animate(animation)
+
+        if self.info['animations'][self.animation].get('display'):
+            self.state.update_combo(animation)
+        elif animation in ('riding', 'falling', 'ded'):
+            self.state.end_combo()

@@ -16,6 +16,7 @@
       ]
     },
     "ollie": {
+      "display": true,
       "next": "float",
       "frames": [
         {
@@ -40,6 +41,7 @@
       ]
     },
     "kickflip": {
+      "display": true,
       "next": "float",
       "frames": [
         {
@@ -80,6 +82,7 @@
       ]
     },
     "heelflip": {
+      "display": true,
       "next": "float",
       "frames": [
         {
@@ -119,7 +122,8 @@
         }
       ]
     },
-    "manual": {
+    "5-0": {
+      "display": true,
       "looping": true,
       "frames": [
         {
@@ -131,7 +135,8 @@
         }
       ]
     },
-    "nosemanual": {
+    "nosegrind": {
+      "display": true,
       "looping": true,
       "frames": [
         {
