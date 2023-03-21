@@ -17,3 +17,15 @@ class Environment(pygame.sprite.Sprite):
         self.geo = pygame.transform.scale(self.geo, size)
         # Generate a mask for use in detailed collision testing
         self.mask = pygame.mask.from_surface(self.geo)
+
+    def is_rideable(self, pos):
+        surface = self.geo.get_at(pos)
+        return True if surface.g else False
+
+    def is_grindable(self, pos):
+        surface = self.geo.get_at(pos)
+        return True if surface.b else False
+
+    def is_dangerous(self, pos):
+        surface = self.geo.get_at(pos)
+        return True if surface.r else False
