@@ -106,6 +106,9 @@ def game_tick(state, dt):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             return False
+        else:
+            # Assuming the player handles all events for now
+            state.bob.handle(event)
 
     state.screen.fill('black')
 

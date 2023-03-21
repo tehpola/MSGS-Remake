@@ -23,9 +23,13 @@ class SpriteSheet(pygame.sprite.Sprite):
         self.animation = self.info['start']
         self.frame = 0
         self.frame_time = 0
-        self._blit()
+        self.is_dirty = True
 
     def _blit(self):
+        if not self.is_dirty:
+            return
+
+        self.is_dirty = False
         anim = self.info['animations'][self.animation]
         frame = anim['frames'][self.frame]
         x, y, w, h = frame['x'], frame['y'], frame['w'], frame['h']
@@ -39,6 +43,7 @@ class SpriteSheet(pygame.sprite.Sprite):
         self.frame_time += dt
         anim = self.info['animations'][self.animation]
         if self.frame_time > anim['frames'][self.frame]['t']:
+            self.is_dirty = True
             self.frame_time = 0
             self.frame += 1
             if self.frame >= len(anim['frames']):
@@ -46,4 +51,13 @@ class SpriteSheet(pygame.sprite.Sprite):
                 if not anim.get('looping', False):
                     self.animation = anim.get('next', self.info['start'])
 
-            self._blit()
+        self._blit()
+
+    def animate(self, animation):
+        if self.animation == animation:
+            return
+
+        self.animation = animation
+        self.frame = 0
+        self.frame_time = 0
+        self.is_dirty = True
