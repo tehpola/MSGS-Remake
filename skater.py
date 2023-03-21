@@ -10,8 +10,6 @@ class Skater(SpriteSheet):
         self.is_grounded = False
 
     def update(self, dt, state, *args, **kwargs):
-        ox, oy = self.rect.topleft
-
         # Apply gravity
         vx, vy = self.velocity
         vy += self.gravity * dt
