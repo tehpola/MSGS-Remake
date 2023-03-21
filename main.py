@@ -37,8 +37,7 @@ class State(object):
         self.intro_time = 0
         self.font = pygame.font.Font('freesansbold.ttf', 64)
         self.bob = Skater('assets/Skata.json')
-        self.env = Environment('assets/Cow.json')
-        self.env.image = pygame.transform.scale(self.env.image, size)
+        self.env = Environment('assets/Cow.json', size)
         self.world = pygame.sprite.Group()
 
 
@@ -113,7 +112,7 @@ def game_tick(state, dt):
     if not state.is_intro_completed:
         intro_tick(state)
     else:
-        state.world.update(dt)
+        state.world.update(dt, state)
         state.world.draw(state.screen)
 
     pygame.display.flip()
