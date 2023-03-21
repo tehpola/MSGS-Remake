@@ -31,6 +31,8 @@ class SpriteSheet(pygame.sprite.Sprite):
         x, y, w, h = frame['x'], frame['y'], frame['w'], frame['h']
         self.image.fill((0, 0, 0, 0))
         self.image.blit(self.sheet, (0, 0), (x, y, w, h))
+        # Generate a mask for use in detailed collision testing
+        self.mask = pygame.mask.from_surface(self.image)
 
     def update(self, dt, *args, **kwargs):
         # Animate the sprite

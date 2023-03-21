@@ -1,9 +1,11 @@
 import pygame
 import sys
-from spritesheet import SpriteSheet
+from skater import Skater
+from environment import Environment
 
 
 is_dev_mode = True
+size = (width, height) = (960, 720)
 nothing = pygame.Color(0, 0, 0, 0)
 red = pygame.Color(255, 0, 0)
 green = pygame.Color(0, 255, 0)
@@ -34,7 +36,9 @@ class State(object):
         self.is_intro_completed = False
         self.intro_time = 0
         self.font = pygame.font.Font('freesansbold.ttf', 64)
-        self.bob = SpriteSheet('assets/Skata.json')
+        self.bob = Skater('assets/Skata.json')
+        self.env = Environment('assets/Cow.json')
+        self.env.image = pygame.transform.scale(self.env.image, size)
         self.world = pygame.sprite.Group()
 
 
@@ -45,6 +49,7 @@ def blend(t, t0, t1):
 def intro_tick(state):
     if is_dev_mode:
         state.is_intro_completed = True
+        state.world.add(state.env)
         state.world.add(state.bob)
         return
 
@@ -64,7 +69,7 @@ def intro_tick(state):
         color = nothing.lerp(red, alpha)
         text = state.font.render('Mike Slegeir', True, color)
         textRect = text.get_rect()
-        textRect.center = (1280/2, 720/2) # FIXME
+        textRect.center = (width/2, height/2)
         state.screen.blit(text, textRect)
 
     if time < pfis:
@@ -76,7 +81,7 @@ def intro_tick(state):
         color = nothing.lerp(green, alpha)
         text = state.font.render('PRESENTS...', True, color)
         textRect = text.get_rect()
-        textRect.center = (1280/2, 720/2) # FIXME
+        textRect.center = (width/2, height/2)
         state.screen.blit(text, textRect)
 
     if time < tfis:
@@ -88,10 +93,11 @@ def intro_tick(state):
         color = nothing.lerp(blue, alpha)
         text = state.font.render('G N A R   S K A T A !', True, color)
         textRect = text.get_rect()
-        textRect.center = (1280/2, 720/2) # FIXME
+        textRect.center = (1280/2, 720/2)
         state.screen.blit(text, textRect)
     else:
         state.is_intro_completed = True
+        state.world.add(state.env)
         state.world.add(state.bob)
 
 
@@ -117,7 +123,7 @@ def game_tick(state, dt):
 
 def main():
     pygame.init()
-    screen = pygame.display.set_mode((1280, 720))
+    screen = pygame.display.set_mode(size)
     pygame.display.set_caption('Mike Slegeir\'s Gnar Skater')
     clock = pygame.time.Clock()
     state = State(clock, screen)
