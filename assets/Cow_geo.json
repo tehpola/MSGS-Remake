@@ -1,0 +1,1 @@
+[{"py/object": "environment.Surface", "rect": {"py/reduce": [{"py/type": "pygame.Rect"}, {"py/tuple": [0, 440, 380, 100]}]}, "surftype": {"py/reduce": [{"py/type": "environment.SurfaceType"}, {"py/tuple": [1]}]}}]

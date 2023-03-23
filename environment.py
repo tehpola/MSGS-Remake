@@ -1,5 +1,19 @@
+from enum import Enum, IntEnum
 import json
+import jsonpickle
 import pygame
+
+
+class SurfaceType(Enum):
+    Pavement = 1
+    Ledge = 2
+    Hazard = 3
+
+
+class Surface(object):
+    def __init__(self, surftype, *args, **kwargs):
+        self.rect = pygame.Rect(*args, **kwargs)
+        self.surftype = surftype
 
 
 class Environment(pygame.sprite.Sprite):
@@ -13,19 +27,13 @@ class Environment(pygame.sprite.Sprite):
         self.image = pygame.image.load(self.info['art']).convert()
         self.image = pygame.transform.scale(self.image, size)
         self.rect = self.image.get_rect()
-        self.geo = pygame.image.load(self.info['geo']).convert_alpha()
-        self.geo = pygame.transform.scale(self.geo, size)
-        # Generate a mask for use in detailed collision testing
-        self.mask = pygame.mask.from_surface(self.geo)
+        with open(self.info['geo']) as geo_file:
+            self.geo = jsonpickle.decode(geo_file.read())
 
-    def is_rideable(self, pos):
-        surface = self.geo.get_at(pos)
-        return True if surface.g else False
+    def get_surface_at(self, rect) -> Surface:
+        for idx in rect.collidelistall(self.geo):
+            surf = self.geo[idx]
+            # TODO: Here I can do more refined testing for collisions with ramps
+            return surf
 
-    def is_grindable(self, pos):
-        surface = self.geo.get_at(pos)
-        return True if surface.b else False
-
-    def is_dangerous(self, pos):
-        surface = self.geo.get_at(pos)
-        return True if surface.r else False
+        return None

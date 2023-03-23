@@ -1,4 +1,6 @@
 import pygame
+
+import environment
 from spritesheet import SpriteSheet
 
 
@@ -8,7 +10,7 @@ class Skater(SpriteSheet):
         self.state = state
         self.velocity = pygame.math.Vector2()
         self.gravity = 0.0025
-        self.is_grounded = False
+        self.depart()
 
         self.debug_overlay = pygame.sprite.Sprite()
         self.debug_overlay.image = pygame.surface.Surface(self.image.get_size()).convert_alpha()
@@ -23,6 +25,7 @@ class Skater(SpriteSheet):
         if not self.is_grounded:
             self.velocity.y += self.gravity * dt
 
+        # Draw debug lines
         center = pygame.math.Vector2(self.rect.size)/2
         pygame.draw.line(self.debug_overlay.image, (0, 0, 255), center, center + self.velocity * dt)
 
@@ -32,6 +35,7 @@ class Skater(SpriteSheet):
 
         # Detect the character moving off the screen
         ew, eh = self.state.env.rect.size
+        # FIXME: Use a screen rect
         if self.rect.x > ew or self.rect.y > eh or self.rect.x < -self.rect.width:
             self.rect.topleft = (0, 0)
             self.velocity.x = min(max(self.velocity.x, -10), 10)
@@ -41,49 +45,57 @@ class Skater(SpriteSheet):
             return
 
         # Environmental collision detection
-        collision = pygame.sprite.collide_mask(self.state.env, self)
+        collision = self.state.env.get_surface_at(self.rect)
         if collision:
-            icol = collision
-            collision = pygame.math.Vector2(collision)
-            pygame.draw.circle(self.debug_overlay.image, (255, 0, 0), collision - self.rect.topleft, 4)
+            center = pygame.math.Vector2(collision.rect.center)
+            pygame.draw.circle(self.debug_overlay.image, (255, 0, 0), center - self.rect.topleft, 4)
             self.state.world.add(self.debug_overlay)
 
-            if self.state.env.is_dangerous(icol):
+            if collision.surftype == environment.SurfaceType.Hazard:
                 self.animate('falling')
-            elif self.state.env.is_grindable(icol):
+            elif collision.surftype == environment.SurfaceType.Ledge:
                 # TODO: Just flag this?
                 pass
                 #self.land()
                 #self.animate('manual')
-            elif self.state.env.is_rideable(icol):
+            elif collision.surftype == environment.SurfaceType.Pavement:
                 self.land(collision, dt)
                 self.animate('riding')
             else:
-                pass # wat do? Erorr!
+                raise NotImplementedError()
         else:
             self.state.world.remove(self.debug_overlay)
 
             # Check whether we're rolling off the ground...
-            gx, gy = self.rect.bottomleft
-            gy += 2
-            gx += (1 if self.velocity.x >= 0 else 2) * (0.3 * self.rect.width)
-            if not self.state.env.is_rideable((int(gx), int(gy))):
-                self.is_grounded = False
+            if self.surface:
+                start = pygame.math.Vector2(self.rect.midbottom)
+                end = start.copy()
+                end.y += self.gravity * dt
+
+                if not self.surface.rect.clipline(start, end):
+                    self.depart()
+
 
         SpriteSheet.update(self, dt)
 
     def land(self, collision, dt):
-        # Resolve penetration
-        if self.velocity:
-            to_col = collision - self.rect.center
-            corner = pygame.math.Vector2()
-            corner.x = self.rect.left if to_col.x < 0 else self.rect.right
-            corner.y = self.rect.top if to_col.y < 0 else self.rect.bottom
-            back = (collision - corner).project(-self.velocity * dt)
-            self.rect.move_ip(*back)
-
-        self.velocity.y = 0
+        self.surface = collision
         self.is_grounded = True
+        self.velocity.y = 0
+
+        # Resolve penetration
+        back = pygame.math.Vector2(self.rect.center) - collision.rect.center
+        corner = pygame.math.Vector2()
+        corner.x = self.rect.right if back.x < 0 else collision.rect.left
+        corner.y = self.rect.bottom if back.y < 0 else collision.rect.top
+        out = collision.rect.clipline(self.rect.center, corner)
+        if out:
+            v1, v2 = out
+            self.rect.move_ip(*(pygame.math.Vector2(v1) - v2))
+
+    def depart(self):
+        self.is_grounded = False
+        self.surface = None
 
     def handle(self, event):
         if event.type == pygame.KEYDOWN:
@@ -94,7 +106,7 @@ class Skater(SpriteSheet):
                 self.velocity.x -= 0.1
             elif name == 'space' and self.is_grounded:
                 self.velocity.y = -1
-                self.is_grounded = False
+                self.depart()
                 self.animate('ollie')
 
     def animate(self, animation):
