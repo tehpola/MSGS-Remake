@@ -1,1 +1,62 @@
-[{"py/object": "environment.Surface", "rect": {"py/reduce": [{"py/type": "pygame.Rect"}, {"py/tuple": [0, 440, 380, 100]}]}, "surftype": {"py/reduce": [{"py/type": "environment.SurfaceType"}, {"py/tuple": [1]}]}}]
+[
+  {
+    "py/object": "environment.Surface",
+    "rect": {
+      "py/reduce": [
+        { "py/type": "pygame.Rect" },
+        { "py/tuple": [0, 440, 380, 100] }
+      ]
+    },
+    "surftype": {
+      "py/reduce": [
+        { "py/type": "environment.SurfaceType" },
+        { "py/tuple": [1] }
+      ]
+    }
+  },
+  {
+    "py/object": "environment.Surface",
+    "rect": {
+      "py/reduce": [
+        { "py/type": "pygame.Rect" },
+        { "py/tuple": [0, 540, 360, 100] }
+      ]
+    },
+    "surftype": {
+      "py/reduce": [
+        { "py/type": "environment.SurfaceType" },
+        { "py/tuple": [2] }
+      ]
+    }
+  },
+  {
+    "py/object": "environment.Surface",
+    "rect": {
+      "py/reduce": [
+        { "py/type": "pygame.Rect" },
+        { "py/tuple": [675, 420, 280, 100] }
+      ]
+    },
+    "surftype": {
+      "py/reduce": [
+        { "py/type": "environment.SurfaceType" },
+        { "py/tuple": [1] }
+      ]
+    }
+  },
+  {
+    "py/object": "environment.Surface",
+    "rect": {
+      "py/reduce": [
+        { "py/type": "pygame.Rect" },
+        { "py/tuple": [675, 540, 285, 100] }
+      ]
+    },
+    "surftype": {
+      "py/reduce": [
+        { "py/type": "environment.SurfaceType" },
+        { "py/tuple": [2] }
+      ]
+    }
+  }
+]
