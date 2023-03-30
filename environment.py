@@ -15,6 +15,15 @@ class Surface(object):
         self.rect = pygame.Rect(*args, **kwargs)
         self.surftype = surftype
 
+    _surftypecolors = {
+        SurfaceType.Pavement:   pygame.color.Color(0, 255, 0),
+        SurfaceType.Ledge:      pygame.color.Color(0, 0, 255),
+        SurfaceType.Hazard:     pygame.color.Color(255, 0, 0),
+    }
+
+    def get_editor_color(self):
+        return self._surftypecolors[self.surftype]
+
 
 class Environment(pygame.sprite.Sprite):
     def __init__(self, info, size):
