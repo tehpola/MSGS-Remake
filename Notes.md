@@ -17,7 +17,7 @@
     - [x] Implement basic physics
     - [x] Reset the player to the start when reaching the end or falling
     - [x] Create a simple level editor
-    - [ ] Implement multiple, looping environments
+    - [x] Implement multiple, looping environments
     - [ ] Following the original control scheme, implement flip tricks
     - [ ] Following the original control scheme, implement grinds
     - [ ] Implement hazards that will cause the player to drop to its death

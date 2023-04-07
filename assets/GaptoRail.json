@@ -1,0 +1,6 @@
+{
+  "art": "assets/GaptoRail_art.png",
+  "geo": "assets/GaptoRail_geo.json",
+  "next": "assets/Basic.json",
+  "prev": "assets/Cow.json"
+}

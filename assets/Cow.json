@@ -1,4 +1,6 @@
 {
   "art": "assets/Cow_art.png",
-  "geo": "assets/Cow_geo.json"
+  "geo": "assets/Cow_geo.json",
+  "next": "assets/GaptoRail.json",
+  "prev": "assets/Grind.json"
 }

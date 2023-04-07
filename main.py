@@ -36,7 +36,7 @@ class State(object):
         self.is_intro_completed = False
         self.font = pygame.font.Font('freesansbold.ttf', 64)
         self.bob = Skater('assets/Skata.json', self)
-        self.env = Environment('assets/Cow.json', size)
+        self.env = Environment('assets/Basic.json', size)
         self.world = pygame.sprite.Group()
         self.combo_string = ''
         self.combo_surface = None
@@ -58,6 +58,17 @@ class State(object):
 
     def end_combo(self):
         self.combo_string = ''
+
+    def update_environment(self, next=True):
+        self.world.remove(self.env)
+        self.world.remove(self.bob)
+
+        next = self.env.get_next() if next else self.env.get_prev()
+        if next:
+            self.env = Environment(next, size)
+
+        self.world.add(self.env)
+        self.world.add(self.bob)
 
 
 def blend(t, t0, t1):

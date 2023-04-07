@@ -47,3 +47,9 @@ class Environment(pygame.sprite.Sprite):
             return surf
 
         return None
+
+    def get_next(self):
+        return self.info.get('next')
+
+    def get_prev(self):
+        return self.info.get('prev')

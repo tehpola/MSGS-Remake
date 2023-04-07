@@ -1,0 +1,6 @@
+{
+  "art": "assets/Grind_art.png",
+  "geo": "assets/Grind_geo.json",
+  "next": "assets/Cow.json",
+  "prev": "assets/Basic.json"
+}

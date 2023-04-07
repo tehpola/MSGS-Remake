@@ -37,11 +37,16 @@ class Skater(SpriteSheet):
         ew, eh = self.state.env.rect.size
         # FIXME: Use a screen rect
         if self.rect.x > ew or self.rect.y > eh or self.rect.x < -self.rect.width:
+            # Move to the next scene, if appropriate
+            if self.rect.x > ew:
+                self.state.update_environment(next=True)
+            elif self.rect.x < -self.rect.width:
+                self.state.update_environment(next=False)
+
             self.rect.topleft = (0, 0)
             self.velocity.x = min(max(self.velocity.x, -10), 10)
             self.velocity.y = 0
             self.animate('float')
-            # TODO: Move to the next scene
             return
 
         # Environmental collision detection
