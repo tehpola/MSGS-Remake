@@ -29,6 +29,7 @@ class Environment(pygame.sprite.Sprite):
     def __init__(self, info, size):
         # Construct the base sprite and load our configuration
         pygame.sprite.Sprite.__init__(self)
+        self.filename = info
         with open(info, 'r') as file:
             self.info = json.load(file)
 

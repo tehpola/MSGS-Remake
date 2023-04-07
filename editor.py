@@ -1,7 +1,9 @@
 import pygame
 from enum import Enum
+import jsonpickle
 import tkinter as tk
-from environment import Environment
+import tkinter.filedialog as tkfiledialog
+from environment import Environment, Surface
 
 
 size = (width, height) = (960, 720)
@@ -26,7 +28,11 @@ class EditorGeo(pygame.sprite.Sprite):
         self.geo = geo
         self.rect = geo.rect
 
-    def redraw(self):
+    def updated(self):
+        # Update the underlying geo
+        self.geo.rect = self.rect
+
+        # Redraw the sprite
         self.image = pygame.surface.Surface(self.rect.size).convert_alpha()
         color = pygame.Color(self.geo.get_editor_color())
         color.a = 32
@@ -34,21 +40,24 @@ class EditorGeo(pygame.sprite.Sprite):
         color.a = 128
         pygame.draw.rect(self.image, color, pygame.Rect((0, 0), self.rect.size), 2)
 
+    def get_geo(self):
+        return Surface(self.geo.surftype, self.rect)
+
 
 class State(object):
-    def __init__(self, clock: pygame.time.Clock, screen):
+    def __init__(self, clock: pygame.time.Clock, screen: pygame.Surface):
         self.tk = tk.Tk()
         self.clock = clock
         self.screen = screen
         self.font = pygame.font.Font('freesansbold.ttf', 32)
-        self.env = None
+        self.env: Environment = None
         self.world = pygame.sprite.Group()
-        self.tool_geo = None
+        self.tool_geo: EditorGeo = None
         self.tool_action = Action.Select
         self.tool_offset = pygame.math.Vector2()
         self.tool_string = ''
-        self.tool_surface = None
-        self.tool_rect = None
+        self.tool_surface: pygame.Surface = None
+        self.tool_rect: pygame.Rect = None
         self.geo = set()
 
         self.tk.withdraw()
@@ -62,7 +71,7 @@ class State(object):
         self.env = Environment(filename, size)
         for geo in self.env.geo:
             sprite = EditorGeo(geo)
-            sprite.redraw()
+            sprite.updated()
             self.geo.add(sprite)
 
         self.world.add(self.env)
@@ -124,29 +133,28 @@ class State(object):
             elif self.tool_action == Action.Resize_SE:
                 topleft = pygame.math.Vector2(self.tool_geo.rect.topleft)
                 self.tool_geo.rect.size = pos - topleft + self.tool_offset
-                self.tool_geo.redraw()
+                self.tool_geo.updated()
             elif self.tool_action == Action.Resize_NE:
                 bottomleft = pygame.math.Vector2(self.tool_geo.rect.bottomleft)
                 size = pos - bottomleft + self.tool_offset
                 size.y = -size.y
                 self.tool_geo.rect.size = size
                 self.tool_geo.rect.bottomleft = bottomleft
-                self.tool_geo.redraw()
+                self.tool_geo.updated()
             elif self.tool_action == Action.Resize_NW:
                 bottomright = pygame.math.Vector2(self.tool_geo.rect.bottomright)
                 size = pos - bottomright + self.tool_offset
                 size *= -1
                 self.tool_geo.rect.size = size
                 self.tool_geo.rect.bottomright = bottomright
-                self.tool_geo.redraw()
+                self.tool_geo.updated()
             elif self.tool_action == Action.Resize_SW:
                 topright = pygame.math.Vector2(self.tool_geo.rect.topright)
                 size = pos - topright + self.tool_offset
                 size.x = -size.x
                 self.tool_geo.rect.size = size
                 self.tool_geo.rect.topright = topright
-                self.tool_geo.redraw()
-
+                self.tool_geo.updated()
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
             self.tool_geo = self._get_geo_under_cursor()
@@ -157,6 +165,22 @@ class State(object):
             self.tool_offset.update(0, 0)
             self.tool_geo = None
             self.clear_tool()
+
+        elif event.type == pygame.KEYDOWN:
+            key = pygame.key.name(event.key)
+
+            if event.mod & pygame.KMOD_CTRL:
+                # Control keys
+                if key == 's':
+                    print('Saving %s...' % self.env.info['geo'])
+                    env_geo = [geo.get_geo() for geo in self.geo]
+                    with open(self.env.info['geo'], 'w') as geo_file:
+                        geo_file.write(jsonpickle.encode(env_geo))
+                elif key == 'o':
+                    filename = tkfiledialog.askopenfilename()
+                    if filename:
+                        print('Loading %s...' % filename)
+                        self.load(filename)
 
         # TODO: Process clicks and hotkeys
 
@@ -197,7 +221,8 @@ def blend(t, t0, t1):
 
 def editor_tick(state, dt):
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT or \
+                (event.type == pygame.KEYDOWN and pygame.key.name(event.key) == 'escape'):
             return False
         else:
             state.handle(event)
