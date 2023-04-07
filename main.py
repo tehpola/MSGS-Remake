@@ -123,7 +123,8 @@ def game_tick(state, dt):
     sys.stdout.write('%.1f\r' % dt)
 
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if event.type == pygame.QUIT or \
+                (event.type == pygame.KEYDOWN and pygame.key.name(event.key) == 'escape'):
             return False
         else:
             # Assuming the player handles all events for now
