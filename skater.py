@@ -81,6 +81,7 @@ class Skater(SpriteSheet):
     def land(self, collision, dt):
         self.surface = collision
         self.is_grounded = True
+        # FIXME: Assuming all ground is flat
         self.velocity.y = 0
 
         # Resolve penetration
@@ -100,14 +101,16 @@ class Skater(SpriteSheet):
     def handle(self, event):
         if event.type == pygame.KEYDOWN:
             name = pygame.key.name(event.key)
-            if name == 'right':
-                self.velocity.x += 0.1
-            elif name == 'left':
-                self.velocity.x -= 0.1
-            elif name == 'space' and self.is_grounded:
-                self.velocity.y = -1
-                self.depart()
-                self.animate('ollie')
+            if self.is_grounded:
+                # Grounded inputs: push / slow / ollie
+                if name == 'right':
+                    self.velocity.x += 0.1
+                elif name == 'left':
+                    self.velocity.x -= 0.1
+                elif name == 'space':
+                    self.velocity.y = -1
+                    self.depart()
+                    self.animate('ollie')
 
     def animate(self, animation):
         super().animate(animation)
