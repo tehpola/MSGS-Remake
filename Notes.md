@@ -16,7 +16,7 @@
     - [x] Import the original backgrounds and geometry
     - [x] Implement basic physics
     - [x] Reset the player to the start when reaching the end or falling
-    - [ ] Create a simple level editor
+    - [x] Create a simple level editor
     - [ ] Implement multiple, looping environments
     - [ ] Following the original control scheme, implement flip tricks
     - [ ] Following the original control scheme, implement grinds
