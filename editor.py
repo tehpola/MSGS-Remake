@@ -3,7 +3,7 @@ from enum import Enum
 import jsonpickle
 import tkinter as tk
 import tkinter.filedialog as tkfiledialog
-from environment import Environment, Surface
+from environment import Environment, Surface, SurfaceType
 
 
 size = (width, height) = (960, 720)
@@ -20,6 +20,11 @@ class Action(Enum):
     Resize_SE = 3
     Resize_SW = 4
     Resize_NW = 5
+    Add = 6
+    Remove = 7
+    Pavify = 8
+    Ledgify = 9
+    Hazardify = 10
 
 
 class EditorGeo(pygame.sprite.Sprite):
@@ -60,8 +65,32 @@ class State(object):
         self.tool_rect: pygame.Rect = None
         self.geo = set()
 
+        # Action palette
+        self.tools = pygame.sprite.Group()
+        self.tool_palette_pos = pygame.math.Vector2(16, 8)
+        self.tool_select = self.create_tool('select', Action.Select)
+        self.tool_new = self.create_tool('new', Action.Add)
+        self.tool_delete = self.create_tool('delete', Action.Remove)
+        self.tool_pavement = self.create_tool('pavement', Action.Pavify)
+        self.tool_ledge = self.create_tool('ledge', Action.Ledgify)
+        self.tool_hazard = self.create_tool('hazard', Action.Hazardify)
+
         self.tk.withdraw()
         self.load('assets/Cow.json')
+
+    def create_tool(self, name: str, action: Action):
+        sprite = pygame.sprite.Sprite()
+        sprite.image = pygame.image.load('assets/editor/%s.png' % name).convert_alpha()
+        sprite.rect = sprite.image.get_rect()
+
+        sprite.tool_name = name
+        sprite.tool_action = action
+
+        sprite.rect.topleft = self.tool_palette_pos
+        self.tool_palette_pos.x += sprite.rect.width + 8
+
+        self.tools.add(sprite)
+
 
     def load(self, filename):
         self.world.remove(self.geo)
@@ -76,6 +105,12 @@ class State(object):
 
         self.world.add(self.env)
         self.world.add(self.geo)
+
+    def _get_tool_under_cursor(self):
+        pos = pygame.mouse.get_pos()
+        for tool in self.tools:
+            if tool.rect.collidepoint(pos):
+                return tool
 
     def _get_geo_under_cursor(self):
         pos = pygame.mouse.get_pos()
@@ -94,8 +129,8 @@ class State(object):
             return None
 
     def _detect_geo_corner_under_cursor(self, geo):
-        if not geo:
-            return Action.Select, pygame.math.Vector2()
+        if not geo or type(geo) is not EditorGeo:
+            return self.tool_action, pygame.math.Vector2()
 
         pos = pygame.mouse.get_pos()
         rect = geo.rect
@@ -122,13 +157,7 @@ class State(object):
     def handle(self, event):
         if event.type == pygame.MOUSEMOTION:
             pos = pygame.math.Vector2(pygame.mouse.get_pos())
-            if self.tool_action == Action.Select:
-                geo = self._get_geo_under_cursor()
-                if geo:
-                    self.update_tool(geo)
-                else:
-                    self.clear_tool()
-            elif self.tool_action == Action.Move:
+            if self.tool_action == Action.Move:
                 self.tool_geo.rect.center = pos + self.tool_offset
             elif self.tool_action == Action.Resize_SE:
                 topleft = pygame.math.Vector2(self.tool_geo.rect.topleft)
@@ -155,13 +184,47 @@ class State(object):
                 self.tool_geo.rect.size = size
                 self.tool_geo.rect.topright = topright
                 self.tool_geo.updated()
+            else:
+                tool = self._get_tool_under_cursor()
+                geo = self._get_geo_under_cursor()
+                if tool:
+                    self.update_tool(tool)
+                elif geo:
+                    self.update_tool(geo)
+                else:
+                    self.clear_tool()
 
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            self.tool_geo = self._get_geo_under_cursor()
-            self.tool_action, self.tool_offset = self._detect_geo_corner_under_cursor(self.tool_geo)
+            tool = self._get_tool_under_cursor()
+            if tool:
+                self.tool_action = tool.tool_action
+            else:
+                self.tool_geo = self._get_geo_under_cursor()
+                if self.tool_action == Action.Select:
+                    self.tool_action, self.tool_offset = self._detect_geo_corner_under_cursor(self.tool_geo)
+                elif self.tool_action == Action.Pavify:
+                    self.tool_geo.geo.surftype = SurfaceType.Pavement
+                    self.tool_geo.updated()
+                elif self.tool_action == Action.Ledgify:
+                    self.tool_geo.geo.surftype = SurfaceType.Ledge
+                    self.tool_geo.updated()
+                elif self.tool_action == Action.Hazardify:
+                    self.tool_geo.geo.surftype = SurfaceType.Hazard
+                    self.tool_geo.updated()
+                elif self.tool_action == Action.Remove:
+                    self.geo.remove(self.tool_geo)
+                    self.world.remove(self.tool_geo)
+                    self.tool_geo = None
+                elif self.tool_action == Action.Add:
+                    pos = pygame.math.Vector2(pygame.mouse.get_pos())
+                    self.tool_geo = EditorGeo(Surface(SurfaceType.Pavement, pos, (32, 32)))
+                    self.tool_geo.updated()
+                    self.geo.add(self.tool_geo)
+                    self.world.add(self.tool_geo)
 
         elif event.type == pygame.MOUSEBUTTONUP:
-            self.tool_action = Action.Select
+            if self.tool_action in (Action.Move, Action.Resize_SE, Action.Resize_NW, Action.Resize_NE, Action.Resize_SW):
+                self.tool_action = Action.Select
             self.tool_offset.update(0, 0)
             self.tool_geo = None
             self.clear_tool()
@@ -191,6 +254,11 @@ class State(object):
         Action.Resize_SE: pygame.SYSTEM_CURSOR_SIZENWSE,
         Action.Resize_SW: pygame.SYSTEM_CURSOR_SIZENESW,
         Action.Resize_NE: pygame.SYSTEM_CURSOR_SIZENESW,
+        Action.Add: pygame.SYSTEM_CURSOR_CROSSHAIR,
+        Action.Remove: pygame.SYSTEM_CURSOR_NO,
+        Action.Pavify: pygame.SYSTEM_CURSOR_HAND,
+        Action.Ledgify: pygame.SYSTEM_CURSOR_HAND,
+        Action.Hazardify: pygame.SYSTEM_CURSOR_HAND,
     }
 
     def update_tool(self, geo):
@@ -198,7 +266,10 @@ class State(object):
         if self.tool_surface:
             self.world.remove(self.tool_surface)
 
-        self.tool_string = str(geo.geo.surftype)
+        if type(geo) is EditorGeo:
+            self.tool_string = '%s %s' % (self.tool_action, geo.geo.surftype)
+        else:
+            self.tool_string = geo.tool_name
 
         self.tool_surface = self.font.render(self.tool_string, True, green.lerp(red, 0.5))
         self.tool_rect = self.tool_surface.get_rect()
@@ -231,6 +302,9 @@ def editor_tick(state, dt):
 
     state.world.update(dt, state)
     state.world.draw(state.screen)
+
+    state.tools.update(dt, state)
+    state.tools.draw(state.screen)
 
     if state.tool_surface:
         state.screen.blit(state.tool_surface, state.tool_rect)
