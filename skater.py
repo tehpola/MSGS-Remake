@@ -10,7 +10,13 @@ class Skater(SpriteSheet):
         self.state = state
         self.velocity = pygame.math.Vector2()
         self.gravity = 0.0025
+        self.input_look_back = 60
+        self.input_look_ahead = 120
         self.depart()
+        self.last_dir = None
+        self.last_dir_time = -1
+        self.latent_action = None
+        self.latent_action_deadline = -1
 
         self.debug_overlay = pygame.sprite.Sprite()
         self.debug_overlay.image = pygame.surface.Surface(self.image.get_size()).convert_alpha()
@@ -103,16 +109,57 @@ class Skater(SpriteSheet):
         self.is_grounded = False
         self.surface = None
 
+    def do_flip(self, direction):
+        if direction == 'left':
+            self.animate('kickflip')
+        elif direction == 'right':
+            self.animate('heelflip')
+
     def handle(self, event):
         if event.type == pygame.KEYDOWN:
+            ticks = pygame.time.get_ticks()
             name = pygame.key.name(event.key)
-            if self.is_grounded:
-                # Grounded inputs: push / slow / ollie
+
+            # Handle look-ahead / look-back for directional inputs
+            if name in ('up', 'down', 'left', 'right'):
+                self.last_dir = name
+                self.last_dir_time = pygame.time.get_ticks()
+                if self.latent_action and ticks <= self.latent_action_deadline:
+                    self.latent_action(name)
+                    self.latent_action = None
+
+            # Flip Tricks on X
+            if name == 'x':
+                if not self.is_grounded and self.animation not in ('ollie', 'float'):
+                    # Consuming this input
+                    return
+
+                if self.is_grounded:
+                    self.velocity.y = -1
+                    self.depart()
+                    self.animate('ollie')
+
+                pressed = pygame.key.get_pressed()
+                last_dir_valid = (ticks - self.last_dir_time) < self.input_look_back
+                if pressed[pygame.K_LEFT] or last_dir_valid and self.last_dir == 'left':
+                    self.do_flip('left')
+                elif pressed[pygame.K_RIGHT] or last_dir_valid and self.last_dir == 'right':
+                    self.do_flip('right')
+                else:
+                    self.latent_action = self.do_flip
+                    self.latent_action_deadline = ticks + self.input_look_ahead
+            # Grind Tricks on C
+            elif name == 'c':
+                # TODO: Initiate grind
+                pass
+            # Grounded Actions (Push / Slow / Ollie)
+            elif self.is_grounded:
                 if name == 'right':
                     self.velocity.x += 0.1
                 elif name == 'left':
                     self.velocity.x -= 0.1
                 elif name == 'space':
+                    # TODO: Crouch logic?
                     self.velocity.y = -1
                     self.depart()
                     self.animate('ollie')
