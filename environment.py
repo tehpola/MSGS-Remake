@@ -40,9 +40,20 @@ class Environment(pygame.sprite.Sprite):
         with open(self.info['geo']) as geo_file:
             self.geo = jsonpickle.decode(geo_file.read())
 
+        self.collision = [geo for geo in self.geo if geo.surftype != SurfaceType.Ledge]
+        self.ledges = [geo for geo in self.geo if geo.surftype == SurfaceType.Ledge]
+
     def get_surface_at(self, rect) -> Surface:
-        for idx in rect.collidelistall(self.geo):
-            surf = self.geo[idx]
+        for idx in rect.collidelistall(self.collision):
+            surf = self.collision[idx]
+            # TODO: Here I can do more refined testing for collisions with ramps
+            return surf
+
+        return None
+
+    def get_ledge_at(self, rect) -> Surface:
+        for idx in rect.collidelistall(self.ledges):
+            surf = self.ledges[idx]
             # TODO: Here I can do more refined testing for collisions with ramps
             return surf
 

@@ -17,6 +17,8 @@ class Skater(SpriteSheet):
         self.last_dir_time = -1
         self.latent_action = None
         self.latent_action_deadline = -1
+        self.current_ledge = None
+        self.grind_deadline = -1
 
         self.debug_overlay = pygame.sprite.Sprite()
         self.debug_overlay.image = pygame.surface.Surface(self.image.get_size()).convert_alpha()
@@ -64,11 +66,6 @@ class Skater(SpriteSheet):
 
             if collision.surftype == environment.SurfaceType.Hazard:
                 self.animate('falling')
-            elif collision.surftype == environment.SurfaceType.Ledge:
-                # TODO: Just flag this?
-                pass
-                #self.land()
-                #self.animate('manual')
             elif collision.surftype == environment.SurfaceType.Pavement:
                 self.land(collision, dt)
                 self.animate('riding')
@@ -86,6 +83,13 @@ class Skater(SpriteSheet):
                 if not self.surface.rect.clipline(start, end):
                     self.depart()
 
+        prev_ledge = self.current_ledge
+        self.current_ledge = self.state.env.get_ledge_at(self.rect)
+        if self.current_ledge and self.current_ledge != prev_ledge and not self.is_grounded:
+            ticks = pygame.time.get_ticks()
+            if ticks <= self.grind_deadline:
+                self.land(self.current_ledge, dt)
+                self.do_grind(self.last_dir if ticks - self.last_dir_time < self.input_look_back else None)
 
         SpriteSheet.update(self, dt)
 
@@ -94,16 +98,8 @@ class Skater(SpriteSheet):
         self.is_grounded = True
         # FIXME: Assuming all ground is flat
         self.velocity.y = 0
-
-        # Resolve penetration
-        back = pygame.math.Vector2(self.rect.center) - collision.rect.center
-        corner = pygame.math.Vector2()
-        corner.x = self.rect.right if back.x < 0 else collision.rect.left
-        corner.y = self.rect.bottom if back.y < 0 else collision.rect.top
-        out = collision.rect.clipline(self.rect.center, corner)
-        if out:
-            v1, v2 = out
-            self.rect.move_ip(*(pygame.math.Vector2(v1) - v2))
+        # HELLA simplified collision handling - I was overthinking things
+        self.rect.bottom = collision.rect.top
 
     def depart(self):
         self.is_grounded = False
@@ -114,6 +110,24 @@ class Skater(SpriteSheet):
             self.animate('kickflip')
         elif direction == 'right':
             self.animate('heelflip')
+
+    def do_grind(self, direction):
+        if direction == 'right':
+            self.animate('nosegrind')
+        else:
+            self.animate('5-0')
+
+    def handle_latent(self, action):
+        ticks = pygame.time.get_ticks()
+        pressed = pygame.key.get_pressed()
+        last_dir_valid = (ticks - self.last_dir_time) < self.input_look_back
+        if pressed[pygame.K_LEFT] or last_dir_valid and self.last_dir == 'left':
+            action('left')
+        elif pressed[pygame.K_RIGHT] or last_dir_valid and self.last_dir == 'right':
+            action('right')
+        else:
+            self.latent_action = action
+            self.latent_action_deadline = ticks + self.input_look_ahead
 
     def handle(self, event):
         if event.type == pygame.KEYDOWN:
@@ -139,19 +153,14 @@ class Skater(SpriteSheet):
                     self.depart()
                     self.animate('ollie')
 
-                pressed = pygame.key.get_pressed()
-                last_dir_valid = (ticks - self.last_dir_time) < self.input_look_back
-                if pressed[pygame.K_LEFT] or last_dir_valid and self.last_dir == 'left':
-                    self.do_flip('left')
-                elif pressed[pygame.K_RIGHT] or last_dir_valid and self.last_dir == 'right':
-                    self.do_flip('right')
-                else:
-                    self.latent_action = self.do_flip
-                    self.latent_action_deadline = ticks + self.input_look_ahead
+                self.handle_latent(self.do_flip)
             # Grind Tricks on C
             elif name == 'c':
-                # TODO: Initiate grind
-                pass
+                if self.current_ledge:
+                    self.land(self.current_ledge, 0)
+                    self.handle_latent(self.do_grind)
+                else:
+                    self.grind_deadline = ticks + self.input_look_ahead
             # Grounded Actions (Push / Slow / Ollie)
             elif self.is_grounded:
                 if name == 'right':
