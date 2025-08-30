@@ -1,3 +1,10 @@
+# /// script
+# dependencies = [
+#   "jsonpickle",
+# ]
+# ///
+
+import asyncio
 import pygame
 import sys
 from skater import Skater
@@ -157,7 +164,7 @@ def game_tick(state, dt):
     return True
 
 
-def main():
+async def main():
     pygame.init()
     screen = pygame.display.set_mode(size)
     pygame.display.set_caption('Mike Slegeir\'s Gnar Skater')
@@ -167,6 +174,7 @@ def main():
     t, lt = 0, 0
     while game_tick(state, t - lt):
         clock.tick(60)
+        await asyncio.sleep(0)  # Required for webasm via pygbag
         lt = t
         t = pygame.time.get_ticks()
 
@@ -176,4 +184,4 @@ def main():
 if __name__ == '__main__':
     import code
     #code.interact(local=locals())
-    main()
+    asyncio.run(main())
